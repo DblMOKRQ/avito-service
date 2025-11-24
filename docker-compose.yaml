@@ -1,53 +1,38 @@
-version: '3.8'
-
 services:
-  # Сервис вашего Go-приложения
   app:
-    # Указываем Docker собирать образ из текущей директории, используя наш Dockerfile
     build: .
     container_name: avito_service_app
-    # Пробрасываем порт 8080 из контейнера на порт 8080 вашего компьютера.
     ports:
       - "8080:8080"
-    # Переменные окружения, необходимые для подключения к базе данных.
-    # Ваше приложение будет читать их при старте.
     environment:
       - DB_USER=user
       - DB_PASSWORD=password
-      - DB_HOST=db # <-- Важно: используем имя сервиса 'db' как хост
+      - DB_HOST=db
       - DB_PORT=5432
       - DB_NAME=avito_db
       - DB_SSLMODE=disable
       - LOG_LEVEL=debug
       - HTTP_ADDR=0.0.0.0:8080
-    # Зависимости. 'app' не запустится, пока сервис 'db' не будет готов.
     depends_on:
       db:
         condition: service_healthy
 
-  # Сервис базы данных PostgreSQL
   db:
-    # Используем официальный образ PostgreSQL
     image: postgres:15-alpine
     container_name: avito_service_db
-    # Те же самые переменные окружения для инициализации базы данных.
-    # PostgreSQL автоматически создаст базу данных и пользователя с этими кредами.
     environment:
       - POSTGRES_USER=user
       - POSTGRES_PASSWORD=password
       - POSTGRES_DB=avito_db
-    # Сохраняем данные PostgreSQL между перезапусками контейнера,
-    # используя именованный volume.
     volumes:
       - postgres_data:/var/lib/postgresql/data
-    # Проверка состояния. Docker Compose будет считать сервис 'db' готовым,
-    # только когда эта команда успешно выполнится.
+
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U user -d avito_db"]
       interval: 10s
       timeout: 5s
       retries: 5
 
-# Определяем volume для хранения данных PostgreSQL
 volumes:
+
   postgres_data:
